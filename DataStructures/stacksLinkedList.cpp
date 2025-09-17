@@ -5,14 +5,25 @@ class Node {
 public:
     int data;
     Node* next;
-    Node(int x) : data(x), next(nullptr) {}
+    
+    Node(int x)
+     {
+        data = x;
+        next = NULL;
+     }
+
 };
 
 class myStack {
     Node* top;
     int count;
 public:
-    myStack() : top(nullptr), count(0) {}
+   myStack()
+     {
+        // initially stack is empty
+        top = NULL;
+        count = 0;
+     }
 
     void push(int x) {
         Node* temp = new Node(x);
