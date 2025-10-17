@@ -1,185 +1,188 @@
 #include <iostream>
+#include <algorithm>  // for max()
 using namespace std;
 
-// Represents one node of the tree
+// ----------------------------
+// Node structure
+// ----------------------------
 class Node {
 public:
-    int data;
-    Node *left;
-    Node *right;
+    int key;
+    Node* left;
+    Node* right;
 
-    Node() { data = 0; left = right = NULL; }
-    Node(int val) { data = val; left = right = NULL; }
+    Node(int value) {
+        key = value;
+        left = right = nullptr;
+    }
 };
 
-// ----------- Function Prototypes -----------
-void inorder(Node *currentPtr);
-Node* insert(Node *root, Node *element);
-int add(Node *currentPtr);
-int find(Node *currentPtr, int val);
-Node* parent(Node *root, Node *node);
-Node* minVal(Node *root);
-Node* maxVal(Node *root);
-int isLeaf(Node *node);
-int hasOnlyLeftChild(Node *node);
-int hasOnlyRightChild(Node *node);
-Node* findNode(Node *currentPtr, int value);
-Node* deleteNode(Node* root, int value);
-int menu();
+// ----------------------------
+// BST class with all functions
+// ----------------------------
+class BST {
+public:
+    Node* root;
 
-// ----------- Function Definitions -----------
+    BST() { root = nullptr; }
 
-// Print tree in sorted (inorder) order
-void inorder(Node *currentPtr) {
-    if (currentPtr != NULL) {
-        inorder(currentPtr->left);
-        cout << " " << currentPtr->data;
-        inorder(currentPtr->right);
-    }
-}
+    // Insert a new key
+    Node* insert(Node* node, int key) {
+        if (node == nullptr)
+            return new Node(key);
 
-// Insert a new node into the BST
-Node* insert(Node *root, Node *element) {
-    if (root == NULL) return element;
-    if (element->data > root->data) {
-        root->right = insert(root->right, element);
-    } else {
-        root->left = insert(root->left, element);
-    }
-    return root;
-}
-
-// Search for a value in the BST
-int find(Node *currentPtr, int val) {
-    if (!currentPtr) return 0;
-    if (currentPtr->data == val) return 1;
-    return (val < currentPtr->data)
-           ? find(currentPtr->left, val)
-           : find(currentPtr->right, val);
-}
-
-// Compute the sum of all nodes
-int add(Node *currentPtr) {
-    if (!currentPtr) return 0;
-    return currentPtr->data + add(currentPtr->left) + add(currentPtr->right);
-}
-
-// Find parent of a given node
-Node* parent(Node *root, Node *node) {
-    if (!root || root == node) return NULL;
-    if (root->left == node || root->right == node) return root;
-    return (node->data < root->data)
-           ? parent(root->left, node)
-           : parent(root->right, node);
-}
-
-// Find smallest node (leftmost)
-Node* minVal(Node *root) {
-    return (root->left == NULL) ? root : minVal(root->left);
-}
-
-// Find largest node (rightmost)
-Node* maxVal(Node *root) {
-    return (root->right == NULL) ? root : maxVal(root->right);
-}
-
-int isLeaf(Node *node) { return (node->left == NULL && node->right == NULL); }
-int hasOnlyLeftChild(Node *node) { return (node->left != NULL && node->right == NULL); }
-int hasOnlyRightChild(Node *node) { return (node->left == NULL && node->right != NULL); }
-
-// Locate node containing a given value
-Node* findNode(Node *currentPtr, int value) {
-    if (!currentPtr) return NULL;
-    if (currentPtr->data == value) return currentPtr;
-    return (value < currentPtr->data)
-           ? findNode(currentPtr->left, value)
-           : findNode(currentPtr->right, value);
-}
-
-// Delete a node from BST
-Node* deleteNode(Node* root, int value) {
-    Node *delnode = findNode(root, value);
-    Node *par = parent(root, delnode);
-    if (!delnode) return root;
-
-    // Case 1: Leaf node
-    if (isLeaf(delnode)) {
-        if (!par) { delete root; return NULL; }
-        if (value < par->data) delete par->left;
-        else { delete par->right; par->right = NULL; }
-        return root;
+        if (key < node->key)
+            node->left = insert(node->left, key);
+        else if (key > node->key)
+            node->right = insert(node->right, key);
+        
+        return node;
     }
 
-    // Case 2: One left child
-    if (hasOnlyLeftChild(delnode)) {
-        if (!par) { Node *save = delnode->left; delete delnode; return save; }
-        if (value < par->data) { Node *save = par->left; par->left = par->left->left; delete save; }
-        else { Node *save = par->right; par->right = par->right->left; delete save; }
-        return root;
+    // Search for a key
+    bool search(Node* node, int key) {
+        if (node == nullptr) 
+            return false;
+        if (node->key == key) 
+            return true;
+        if (key < node->key)
+            return search(node->left, key);
+        else
+            return search(node->right, key);
     }
 
-    // Case 3: One right child
-    if (hasOnlyRightChild(delnode)) {
-        if (!par) { Node *save = delnode->right; delete delnode; return save; }
-        if (value < par->data) { Node *save = par->left; par->left = par->left->right; delete save; }
-        else { Node *save = par->right; par->right = par->right->right; delete save; }
-        return root;
+    // Find the minimum key
+    int findMin(Node* node) {
+        if (node == nullptr) {
+            cout << "Tree is empty.\n";
+            return -1;
+        }
+        while (node->left != nullptr)
+            node = node->left;
+        return node->key;
     }
 
-    // Case 4: Two children – replace with inorder successor
-    Node *newDelNode = minVal(delnode->right);
-    int saveVal = newDelNode->data;
-    deleteNode(root, saveVal);
-    delnode->data = saveVal;
-    return root;
-}
+    // Find the maximum key
+    int findMax(Node* node) {
+        if (node == nullptr) {
+            cout << "Tree is empty.\n";
+            return -1;
+        }
+        while (node->right != nullptr)
+            node = node->right;
+        return node->key;
+    }
 
-// Display user menu
-int menu() {
-    int ans;
-    cout << "\nMenu:\n";
-    cout << "1. Insert\n2. Delete\n3. Search\n4. Sum of nodes\n5. Inorder traversal\n6. Exit\n";
-    cout << "Enter choice: ";
-    cin >> ans;
-    return ans;
-}
+    // Delete a node
+    Node* deleteNode(Node* node, int key) {
+        if (node == nullptr) 
+            return node;
 
-// ----------- Main Driver -----------
+        if (key < node->key)
+            node->left = deleteNode(node->left, key);
+        else if (key > node->key)
+            node->right = deleteNode(node->right, key);
+        else {
+            // Case 1: no child
+            if (node->left == nullptr && node->right == nullptr) {
+                delete node;
+                return nullptr;
+            }
+            // Case 2: one child
+            else if (node->left == nullptr) {
+                Node* temp = node->right;
+                delete node;
+                return temp;
+            }
+            else if (node->right == nullptr) {
+                Node* temp = node->left;
+                delete node;
+                return temp;
+            }
+            // Case 3: two children
+            else {
+                Node* successor = node->right;
+                while (successor->left != nullptr)
+                    successor = successor->left;
+                node->key = successor->key;
+                node->right = deleteNode(node->right, successor->key);
+            }
+        }
+        return node;
+    }
+
+    // Inorder traversal (Left → Root → Right)
+    void inorder(Node* node) {
+        if (node == nullptr) return;
+        inorder(node->left);
+        cout << node->key << " ";
+        inorder(node->right);
+    }
+
+    // Preorder traversal (Root → Left → Right)
+    void preorder(Node* node) {
+        if (node == nullptr) return;
+        cout << node->key << " ";
+        preorder(node->left);
+        preorder(node->right);
+    }
+
+    // Postorder traversal (Left → Right → Root)
+    void postorder(Node* node) {
+        if (node == nullptr) return;
+        postorder(node->left);
+        postorder(node->right);
+        cout << node->key << " ";
+    }
+
+    // Height of the BST
+    int height(Node* node) {
+        if (node == nullptr) return 0;
+        return 1 + max(height(node->left), height(node->right));
+    }
+};
+
+// ----------------------------
+// Driver function
+// ----------------------------
 int main() {
-    Node *myRoot = NULL, *tempNode;
-    int ans, val;
+    BST tree;
 
-    ans = menu();
-    while (ans != 6) {
-        if (ans == 1) {
-            cout << "Enter value to insert: ";
-            cin >> val;
-            tempNode = new Node(val);
-            myRoot = insert(myRoot, tempNode);
-        }
-        else if (ans == 2) {
-            cout << "Enter value to delete: ";
-            cin >> val;
-            if (!find(myRoot, val))
-                cout << "Value not found.\n";
-            else
-                myRoot = deleteNode(myRoot, val);
-        }
-        else if (ans == 3) {
-            cout << "Enter value to search: ";
-            cin >> val;
-            cout << (find(myRoot, val)
-                     ? "Found " + to_string(val) + " in the tree.\n"
-                     : "Did not find " + to_string(val) + " in the tree.\n");
-        }
-        else if (ans == 4)
-            cout << "Sum of all nodes: " << add(myRoot) << "\n";
-        else if (ans == 5) {
-            cout << "Inorder traversal: ";
-            inorder(myRoot);
-            cout << "\n";
-        }
-        ans = menu();
-    }
+    // Insert elements
+    tree.root = tree.insert(tree.root, 50);
+    tree.root = tree.insert(tree.root, 30);
+    tree.root = tree.insert(tree.root, 20);
+    tree.root = tree.insert(tree.root, 40);
+    tree.root = tree.insert(tree.root, 70);
+    tree.root = tree.insert(tree.root, 60);
+    tree.root = tree.insert(tree.root, 80);
+
+    cout << "Inorder traversal: ";
+    tree.inorder(tree.root);
+    cout << endl;
+
+    cout << "Preorder traversal: ";
+    tree.preorder(tree.root);
+    cout << endl;
+
+    cout << "Postorder traversal: ";
+    tree.postorder(tree.root);
+    cout << endl;
+
+    cout << "Minimum value: " << tree.findMin(tree.root) << endl;
+    cout << "Maximum value: " << tree.findMax(tree.root) << endl;
+    cout << "Height of tree: " << tree.height(tree.root) << endl;
+
+    // Search
+    int key = 60;
+    cout << "Search " << key << ": "
+         << (tree.search(tree.root, key) ? "Found" : "Not Found") << endl;
+
+    // Delete
+    tree.root = tree.deleteNode(tree.root, 20);
+    cout << "After deleting 20, inorder traversal: ";
+    tree.inorder(tree.root);
+    cout << endl;
+
     return 0;
 }
