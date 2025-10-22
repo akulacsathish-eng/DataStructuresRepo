@@ -1,7 +1,9 @@
 #include <iostream>
 using namespace std;
 
-// Node structure
+// ---------------------------
+// Node Structure
+// ---------------------------
 struct Node {
     int key;
     Node* left;
@@ -9,122 +11,155 @@ struct Node {
     int height;
 };
 
-// Utility: get height of node
+// ---------------------------
+// Utility Functions
+// ---------------------------
+
+// Get height of a node using if-else
 int height(Node* n) {
-    return n ? n->height : 0;
+    if (n != nullptr)
+        return n->height;
+    else
+        return 0;
 }
 
-// Utility: get balance factor
+// Get balance factor (left height - right height)
 int getBalance(Node* n) {
-    return n ? height(n->left) - height(n->right) : 0;
+    if (n != nullptr)
+        return height(n->left) - height(n->right);
+    else
+        return 0;
 }
 
-// Create new node
+// Create a new node
 Node* newNode(int key) {
     Node* node = new Node();
     node->key = key;
-    node->left = node->right = nullptr;
-    node->height = 1;  // new node is initially at height 1
+    node->left = nullptr;
+    node->right = nullptr;
+    node->height = 1; // leaf node
     return node;
 }
 
-// Right rotation
-Node* rightRotate(Node* y) {
-    Node* x = y->left;
-    Node* T2 = x->right;
+// ---------------------------
+// Rotation Functions
+// ---------------------------
 
-    // Rotate
-    x->right = y;
-    y->left = T2;
+// Right rotation
+Node* rotateRight(Node* pivot) {
+    Node* child = pivot->left;        // left child becomes new root
+    Node* grandchild = child->right;  // temporary subtree
+
+    // Perform rotation
+    child->right = pivot;
+    pivot->left = grandchild;
 
     // Update heights
-    y->height = max(height(y->left), height(y->right)) + 1;
-    x->height = max(height(x->left), height(x->right)) + 1;
+    if (pivot != nullptr)
+        pivot->height = (height(pivot->left) > height(pivot->right) ? height(pivot->left) : height(pivot->right)) + 1;
 
-    return x; // new root
+    if (child != nullptr)
+        child->height = (height(child->left) > height(child->right) ? height(child->left) : height(child->right)) + 1;
+
+    // Return new root
+    return child;
 }
 
 // Left rotation
-Node* leftRotate(Node* x) {
-    Node* y = x->right;
-    Node* T2 = y->left;
+Node* rotateLeft(Node* pivot) {
+    Node* child = pivot->right;       // right child becomes new root
+    Node* grandchild = child->left;   // temporary subtree
 
-    // Rotate
-    y->left = x;
-    x->right = T2;
+    // Perform rotation
+    child->left = pivot;
+    pivot->right = grandchild;
 
     // Update heights
-    x->height = max(height(x->left), height(x->right)) + 1;
-    y->height = max(height(y->left), height(y->right)) + 1;
+    if (pivot != nullptr)
+        pivot->height = (height(pivot->left) > height(pivot->right) ? height(pivot->left) : height(pivot->right)) + 1;
 
-    return y; // new root
+    if (child != nullptr)
+        child->height = (height(child->left) > height(child->right) ? height(child->left) : height(child->right)) + 1;
+
+    // Return new root
+    return child;
 }
 
-// Insert key and balance
-Node* insert(Node* node, int key) {
-    // 1️⃣ Normal BST insert
-    if (!node)
+// ---------------------------
+// Insertion with Rebalancing
+// ---------------------------
+Node* insert(Node* root, int key) {
+    // 1️⃣ Standard BST insertion
+    if (root == nullptr)
         return newNode(key);
 
-    if (key < node->key)
-        node->left = insert(node->left, key);
-    else if (key > node->key)
-        node->right = insert(node->right, key);
+    if (key < root->key)
+        root->left = insert(root->left, key);
+    else if (key > root->key)
+        root->right = insert(root->right, key);
     else
-        return node; // duplicates not allowed
+        return root; // no duplicates
 
-    // 2️⃣ Update height
-    node->height = 1 + max(height(node->left), height(node->right));
+    // 2️⃣ Update height of pivot
+    int leftHeight = height(root->left);
+    int rightHeight = height(root->right);
+    root->height = (leftHeight > rightHeight ? leftHeight : rightHeight) + 1;
 
-    // 3️⃣ Check balance
-    int balance = getBalance(node);
+    // 3️⃣ Get balance factor
+    int balance = getBalance(root);
 
     // 4️⃣ Perform rotations if unbalanced
 
-    // Left Left
-    if (balance > 1 && key < node->left->key)
-        return rightRotate(node);
+    // Case 1: Left-Left (rotate right)
+    if (balance > 1 && key < root->left->key)
+        return rotateRight(root);
 
-    // Right Right
-    if (balance < -1 && key > node->right->key)
-        return leftRotate(node);
+    // Case 2: Right-Right (rotate left)
+    if (balance < -1 && key > root->right->key)
+        return rotateLeft(root);
 
-    // Left Right
-    if (balance > 1 && key > node->left->key) {
-        node->left = leftRotate(node->left);
-        return rightRotate(node);
+    // Case 3: Left-Right (double rotation)
+    if (balance > 1 && key > root->left->key) {
+        root->left = rotateLeft(root->left);
+        return rotateRight(root);
     }
 
-    // Right Left
-    if (balance < -1 && key < node->right->key) {
-        node->right = rightRotate(node->right);
-        return leftRotate(node);
+    // Case 4: Right-Left (double rotation)
+    if (balance < -1 && key < root->right->key) {
+        root->right = rotateRight(root->right);
+        return rotateLeft(root);
     }
 
-    return node; // unchanged node pointer
+    // Return unchanged node if already balanced
+    return root;
 }
 
-// Print tree in-order
+// ---------------------------
+// Traversal Function
+// ---------------------------
 void inOrder(Node* root) {
-    if (root) {
+    if (root != nullptr) {
         inOrder(root->left);
         cout << root->key << " ";
         inOrder(root->right);
     }
 }
 
+// ---------------------------
+// Main Function
+// ---------------------------
 int main() {
     Node* root = nullptr;
 
-    root = insert(root, 30);
-    root = insert(root, 10);
-    root = insert(root, 40);
-    root = insert(root, 5);
-    root = insert(root, 20);
-    root = insert(root, 35);
-    root = insert(root, 50);
+    // Insert elements
+    int keys[] = {30, 10, 40, 5, 20, 35, 50, 37};
+    int size = sizeof(keys) / sizeof(keys[0]);
 
-    cout << "Inorder traversal of AVL tree:\n";
+    for (int i = 0; i < size; i++) {
+        root = insert(root, keys[i]);
+    }
+
+    cout << "Inorder traversal of the AVL tree:\n";
     inOrder(root);
     cout << endl;
 
